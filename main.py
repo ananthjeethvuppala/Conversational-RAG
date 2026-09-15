@@ -5,6 +5,7 @@ from modules.faiss_index import create_faiss_index
 from modules.retriever import retrieve_chunk
 from modules.prompts import create_prompt
 from modules.llm import generate_answer
+from modules.question_rewriter import rewrite_question
 
 # --------------------------------------------------
 # 1. Load PDF documents
@@ -52,7 +53,7 @@ while True:
     query = input("\nYou: ").strip()
 
     if query.lower() in ["exit", "quit"]:
-        print("\nExiting Multi-PDF RAG Assistant...")
+        print("\nExiting Conversational RAG Assistant...")
         break
 
     if not query:
@@ -63,7 +64,12 @@ while True:
     # Create query embedding
     # --------------------------------------------------
 
-    query_embedding = create_query_embeddings(query)
+    standalone_query = rewrite_question(query, conversation_history)
+
+    print("\nRewritten Query:")
+    print(standalone_query)
+
+    query_embedding = create_query_embeddings(standalone_query)
 
     # --------------------------------------------------
     # Retrieve relevant chunks

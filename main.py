@@ -109,7 +109,7 @@ while True:
     # Create prompt
     # --------------------------------------------------
 
-    prompt = create_prompt(context, query)
+    prompt = create_prompt(context, query, conversation_history)
 
     # --------------------------------------------------
     # Generate answer
@@ -140,3 +140,9 @@ while True:
     
     for source in sources:
         print("-", source)
+
+# print("\nConversation Memory:")
+# for conversation in conversation_history:
+#     print(f"User: {conversation['user']}")
+#     print(f"Assistant: {conversation['assistant']}")
+#     print("-" * 40)

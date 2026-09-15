@@ -13,7 +13,7 @@ def rewrite_question(query, conversation_history):
 
     history = ""
 
-    for converstion in conversation_history:
+    for converstion in conversation_history[-5:]:
         history += f"""
 User: {converstion["user"]}
 Assistant: {converstion["assistant"]}

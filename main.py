@@ -45,6 +45,8 @@ print("=" * 60)
 print("Ask questions about your PDF documents.")
 print("Type 'exit' to quit.")
 
+conversation_history = []
+
 while True:
 
     query = input("\nYou: ").strip()
@@ -115,6 +117,13 @@ while True:
 
     print("\nAssistant:")
     print(answer)
+
+    conversation_history.append(
+        {
+            "user": query,
+            "assistant": answer
+        }
+    )
 
     sources = set()
 

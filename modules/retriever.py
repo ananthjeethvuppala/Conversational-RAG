@@ -1,6 +1,6 @@
 import numpy as np
 
-def retrieve_chunk(query_embedding, index, chunks, top_k=3, max_distance=1.2):
+def retrieve_chunk(query_embedding, index, chunks, top_k=3, max_distance=0.9):
     query_embedding = np.array(
         [query_embedding],
         dtype="float32"

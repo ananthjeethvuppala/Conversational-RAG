@@ -1,4 +1,4 @@
-def evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3):
+def evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3, max_distance=0.9):
 
     results = []
 
@@ -9,7 +9,7 @@ def evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chu
 
         query_embedding = create_query_embeddings(question)
 
-        retrieved_chunks = retrieve_chunk(query_embedding, index, chunks, top_k=top_k)
+        retrieved_chunks = retrieve_chunk(query_embedding, index, chunks, top_k=top_k, max_distance=max_distance)
         retrieved_sources = [chunk["source"] for chunk in retrieved_chunks]
 
         hit = any(source in expected_sources for source in retrieved_sources)
@@ -51,7 +51,10 @@ def calculate_precision_at_k(results, k=3):
             if source in expected_sources:
                 relavant_count += 1
 
-        precision = relavant_count / len(retrieved_sources)
+        if len(retrieved_sources) == 0:
+            precision = 0
+        else:
+            precision = relavant_count / len(retrieved_sources)
         total_precision += precision
 
     average_precision = total_precision / len(results)

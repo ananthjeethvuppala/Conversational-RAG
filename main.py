@@ -44,13 +44,13 @@ print(f"FAISS index contains {index.ntotal} vectors.")
 # --------------------------------------------------
 # 5. Evaluation
 # --------------------------------------------------
-for k in [1, 3, 5]:
+for threshold in [0.5, 0.7, 0.9, 1.1, 1.3, 1.5]:
 
-    evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3)
+    evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3, max_distance=threshold)
 
     hit_rate = calculate_hit_rate(evaluation_results)
 
-    precision = calculate_precision_at_k(evaluation_results, k=k)
+    precision = calculate_precision_at_k(evaluation_results, k=3)
 
     # print("\nRetrieval Evaluation")
     # print("--------------------")
@@ -61,16 +61,16 @@ for k in [1, 3, 5]:
     #     print(f"Retrieved: {result['retrieved_sources']}")
     #     print(f"Hit: {result['hit']}")
 
-    print(f"\nK = {k}")
-    print(f"\nHit Rate@{k}: {hit_rate * 100:.2f}%")
-    print(f"Precision@{k}: {precision * 100:.2f}%")
+    print(f"\nThreshold = {threshold}")
+    print(f"\nHit Rate@3: {hit_rate * 100:.2f}%")
+    print(f"Precision@3: {precision * 100:.2f}%")
 
 # --------------------------------------------------
 # 6. Get query from user
 # --------------------------------------------------
 
 print("\n" + "=" * 60)
-print("MULTI-PDF RAG ASSISTANT")
+print("CONVERSATIONAL RAG ASSISTANT")
 print("=" * 60)
 
 print("Ask questions about your PDF documents.")

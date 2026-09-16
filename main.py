@@ -6,34 +6,59 @@ from modules.retriever import retrieve_chunk
 from modules.prompts import create_prompt
 from modules.llm import generate_answer
 from modules.question_rewriter import rewrite_question
+from modules.evaluation_dataset import evaluation_dataset
+from modules.evaluation import evaluate_retrieval, calculate_hit_rate
 
 # --------------------------------------------------
 # 1. Load PDF documents
 # --------------------------------------------------
 
+print("Loading PDFs...")
 documents = load_pdfs("documents")
-print(f"\nLoaded {len(documents)} PDF documents.")
+print(f"\nLoaded {len(documents)} PDF documents.\n")
 
 # --------------------------------------------------
 # 2. Create chunks
 # --------------------------------------------------
 
+print("Creating chunks...")
 chunks = chunks_documents(documents)
-print(f"Created {len(chunks)} chunks.")
+print(f"Created {len(chunks)} chunks.\n")
 
 # --------------------------------------------------
 # 3. Create embeddings
 # --------------------------------------------------
 
+print("Creating embeddings...")
 embeddings = create_embeddings(chunks)
-print(f"Embedding shape: {embeddings.shape}")
+print(f"Embedding shape: {embeddings.shape}\n")
 
 # --------------------------------------------------
 # 4. Create FAISS index
 # --------------------------------------------------
 
+print("Creating FAISS index...")
 index = create_faiss_index(embeddings)
 print(f"FAISS index contains {index.ntotal} vectors.")
+
+# --------------------------------------------------
+# ## Evaluation ##
+# --------------------------------------------------
+
+evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3)
+
+hit_rate = calculate_hit_rate(evaluation_results)
+
+print("\nRetrieval Evaluation")
+print("--------------------")
+
+for result in evaluation_results:
+    print(f"\nQuestion: {result['question']}")
+    print(f"Expected: {result['expected_sources']}")
+    print(f"Retrieved: {result['retrieved_sources']}")
+    print(f"Hit: {result['hit']}")
+
+print(f"\nHit Rate@3: {hit_rate * 100:.2f}%")
 
 # --------------------------------------------------
 # 5. Get query from user
@@ -140,6 +165,10 @@ while True:
     
     for source in sources:
         print("-", source)
+
+# --------------------------------------------------
+# Un-comment the below for Conversation Memory
+# --------------------------------------------------
 
 # print("\nConversation Memory:")
 # for conversation in conversation_history:

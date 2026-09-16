@@ -7,7 +7,7 @@ from modules.prompts import create_prompt
 from modules.llm import generate_answer
 from modules.question_rewriter import rewrite_question
 from modules.evaluation_dataset import evaluation_dataset
-from modules.evaluation import evaluate_retrieval, calculate_hit_rate
+from modules.evaluation import evaluate_retrieval, calculate_hit_rate, calculate_precision_at_k
 
 # --------------------------------------------------
 # 1. Load PDF documents
@@ -42,26 +42,31 @@ index = create_faiss_index(embeddings)
 print(f"FAISS index contains {index.ntotal} vectors.")
 
 # --------------------------------------------------
-# ## Evaluation ##
+# 5. Evaluation
 # --------------------------------------------------
+for k in [1, 3, 5]:
 
-evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3)
+    evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3)
 
-hit_rate = calculate_hit_rate(evaluation_results)
+    hit_rate = calculate_hit_rate(evaluation_results)
 
-print("\nRetrieval Evaluation")
-print("--------------------")
+    precision = calculate_precision_at_k(evaluation_results, k=k)
 
-for result in evaluation_results:
-    print(f"\nQuestion: {result['question']}")
-    print(f"Expected: {result['expected_sources']}")
-    print(f"Retrieved: {result['retrieved_sources']}")
-    print(f"Hit: {result['hit']}")
+    # print("\nRetrieval Evaluation")
+    # print("--------------------")
 
-print(f"\nHit Rate@3: {hit_rate * 100:.2f}%")
+    # for result in evaluation_results:
+    #     print(f"\nQuestion: {result['question']}")
+    #     print(f"Expected: {result['expected_sources']}")
+    #     print(f"Retrieved: {result['retrieved_sources']}")
+    #     print(f"Hit: {result['hit']}")
+
+    print(f"\nK = {k}")
+    print(f"\nHit Rate@{k}: {hit_rate * 100:.2f}%")
+    print(f"Precision@{k}: {precision * 100:.2f}%")
 
 # --------------------------------------------------
-# 5. Get query from user
+# 6. Get query from user
 # --------------------------------------------------
 
 print("\n" + "=" * 60)

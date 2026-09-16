@@ -35,3 +35,25 @@ def calculate_hit_rate(results):
     hit_rate = hits / len(results)
 
     return hit_rate
+
+def calculate_precision_at_k(results, k=3):
+
+    total_precision = 0
+
+    for result in results:
+
+        expected_sources = result["expected_sources"]
+        retrieved_sources = result["retrieved_sources"][:k]
+
+        relavant_count = 0
+
+        for source in retrieved_sources:
+            if source in expected_sources:
+                relavant_count += 1
+
+        precision = relavant_count / len(retrieved_sources)
+        total_precision += precision
+
+    average_precision = total_precision / len(results)
+
+    return average_precision

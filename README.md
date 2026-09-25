@@ -2,7 +2,7 @@
 
 A **Conversational Retrieval-Augmented Generation (RAG) system** that allows users to have multi-turn conversations with a collection of PDF documents.
 
-The system combines **Multi-Document RAG with conversation memory**. It retrieves relevant information from multiple PDFs, uses conversation history to understand follow-up questions, rewrites contextual questions into standalone queries, and generates grounded answers using an LLM through the **Groq API**.
+The system combines **Multi-Document RAG with conversation memory and RAG evaluation**. It retrieves relevant information from multiple PDFs, uses conversation history to understand follow-up questions, rewrites contextual questions into standalone queries, generates grounded answers using an LLM through the **Groq API**, and evaluates retrieval quality, answer correctness, and groundedness.
 
 ---
 
@@ -56,6 +56,18 @@ The system combines **Multi-Document RAG with conversation memory**. It retrieve
 * 🧠 **Sliding-Window Memory**
 
   * Uses the most recent five conversation turns when providing history to the LLM.
+
+* 📊 **RAG Evaluation**
+
+  * Evaluates retrieval quality using Hit Rate@K and Precision@K.
+
+* 🎯 **Answer Evaluation**
+
+  * Uses an LLM judge to evaluate generated answers against expected answers.
+
+* 🔍 **Groundedness Evaluation**
+
+  * Evaluates whether generated answers are supported by the retrieved document context.
 
 ---
 
@@ -162,6 +174,9 @@ Conversational RAG/
 │   ├── prompts.py
 │   ├── llm.py
 │   └── question_rewriter.py
+│   ├── evaluation.py
+│   ├── evaluation_dataset.py
+│   └── answer_evaluation_dataset.py
 │
 ├── main.py
 ├── .env
@@ -335,11 +350,95 @@ This provides basic traceability for the generated response.
 
 ---
 
+## 📊 RAG Evaluation
+
+The project includes an evaluation framework to measure the quality of the RAG pipeline.
+
+The evaluation covers three areas:
+
+### 1. Retrieval Evaluation
+
+Retrieval quality is measured using:
+
+- Hit Rate@K
+- Precision@K
+- Distance threshold experiments
+
+### 2. Answer Evaluation
+
+An LLM judge evaluates generated answers against expected answers using a score from 0 to 2:
+
+| Score | Meaning |
+|---|---|
+| 0 | Incorrect or does not answer the question |
+| 1 | Partially correct or missing important information |
+| 2 | Correct and sufficiently complete |
+
+### 3. Groundedness Evaluation
+
+The generated answer is evaluated against the retrieved context:
+
+| Score | Meaning |
+|---|---|
+| 0 | Answer contains unsupported information |
+| 1 | Answer is partially supported |
+| 2 | Answer is fully supported by the retrieved context |
+
+### Retrieval Threshold Experiment
+
+The retrieval distance threshold was evaluated using the retrieval evaluation dataset.
+
+| Distance Threshold | Hit Rate@3 | Precision@3 |
+|---:|---:|---:|
+| 0.5 | 50.00% | 50.00% |
+| 0.7 | 62.50% | 54.17% |
+| 0.9 | 100.00% | 85.42% |
+| 1.1 | 100.00% | 83.33% |
+| 1.3 | 100.00% | 83.33% |
+| 1.5 | 100.00% | 79.17% |
+
+Based on this experiment, a distance threshold of **0.9** was selected for the current system.
+
+> The `0.9` threshold is specific to this dataset and retrieval configuration and should not be considered a universal value.
+
+### Final Evaluation Results
+
+#### Retrieval Evaluation
+
+- **Hit Rate@3:** 100.00%
+- **Precision@3:** 85.42%
+
+#### Answer Evaluation
+
+- **Score 2:** 12/15
+- **Score 1:** 0/15
+- **Score 0:** 3/15
+- **Answer Score-2 Rate:** 80.00%
+
+#### Groundedness Evaluation
+
+- **Score 2:** 13/15
+- **Score 1:** 1/15
+- **Score 0:** 1/15
+- **Groundedness Rate:** 86.67%
+
+### Evaluation Notes
+
+The three answer-evaluation failures occurred on questions about:
+
+- Embeddings in RAG
+- Chunking in RAG
+- Cosine similarity in semantic search
+
+These results are influenced by the information available in the current PDF collection and retrieved context.
+
+The answer and groundedness evaluations use an LLM as the judge, so small variations between runs are possible because the evaluator itself is probabilistic.
+
 ## 💬 Example Conversation
 
 ```text
 ============================================================
-MULTI-PDF RAG ASSISTANT
+CONVERSATIONAL RAG ASSISTANT
 ============================================================
 
 Ask questions about your PDF documents.
@@ -480,7 +579,7 @@ Embedding model:     all-MiniLM-L6-v2
 Embedding dimension: 384
 FAISS index:         IndexFlatL2
 Top-K retrieval:     3
-Distance threshold:  1.2
+Distance threshold:  0.9
 Memory window:       5 turns
 LLM:                 openai/gpt-oss-120b
 ```
@@ -524,7 +623,11 @@ The system successfully rewrites these follow-up questions into standalone queri
 * Retrieval uses a fixed `top_k` value.
 * Distance threshold requires further evaluation.
 * PDF extraction quality depends on the source PDF.
-* No automated RAG evaluation framework yet.
+* Answer and groundedness evaluations use an LLM-based judge.
+* LLM judge results can vary slightly between runs.
+* The evaluation dataset is currently limited in size.
+* Retrieval evaluation uses expected source documents rather than human relevance judgments.
+* No automated experiment tracking or evaluation dashboard.
 * No persistent conversation storage.
 * Currently runs through a command-line interface.
 
@@ -532,9 +635,6 @@ The system successfully rewrites these follow-up questions into standalone queri
 
 ## 🔮 Future Improvements
 
-* [ ] RAG evaluation framework
-* [ ] Retrieval precision and recall evaluation
-* [ ] Answer faithfulness evaluation
 * [ ] Improved retrieval strategies
 * [ ] Document-level ranking
 * [ ] Persistent FAISS index
@@ -544,6 +644,8 @@ The system successfully rewrites these follow-up questions into standalone queri
 * [ ] Better error handling
 * [ ] Production deployment
 * [ ] RAG monitoring and observability
+* [ ] Automated experiment tracking
+* [ ] Larger evaluation dataset
 
 ---
 
@@ -563,6 +665,15 @@ Key concepts learned:
 * Conversation context vs. document context
 * Source attribution
 * Grounded LLM generation
+* Retrieval evaluation
+* Hit Rate@K
+* Precision@K
+* Retrieval threshold tuning
+* Answer correctness evaluation
+* LLM-as-a-judge
+* Groundedness evaluation
+* Automated metric calculation
+* RAG quality analysis
 
 ### Core Concept
 

@@ -88,9 +88,184 @@ Source: {chunk["source"]}
             {
                 "question": question,
                 "expected_answer": expected_answer,
-                "generated_answer": answer
+                "generated_answer": answer,
+                "context": context
             }
         )
 
     return results
 
+def judge_answer(question, expected_answer, generated_answer, generate_answer):
+    prompt = f"""
+You are an evaluator for a Retrieval-Augmented Generation system.
+
+Evaluate the generated answer against the expected answer.
+
+Question:
+{question}
+
+Expected Answer:
+{expected_answer}
+
+Generated Answer:
+{generated_answer}
+
+Evaluate whether the generated answer correctly answers
+the question and matches the important information in
+the expected answer.
+
+Give a score from 0 to 2:
+
+0 = Incorrect or does not answer the question
+1 = Partially correct or missing important information
+2 = Correct and sufficiently complete
+
+Return your response in exactly this format:
+
+Score: <0, 1, or 2>
+Reason: <short explanation>
+"""
+    
+    evaluation = generate_answer(prompt)
+
+    return evaluation
+
+def judge_groundedness(
+    question,
+    context,
+    generated_answer,
+    generate_answer
+):
+    prompt = f"""
+You are evaluating the groundedness of a RAG system.
+
+Determine whether the generated answer is supported by
+the retrieved context.
+
+Question:
+{question}
+
+Retrieved Context:
+{context}
+
+Generated Answer:
+{generated_answer}
+
+Give a score from 0 to 2:
+
+0 = The answer contains information that is not supported
+    by the retrieved context.
+
+1 = The answer is partially supported, but contains some
+    unsupported or questionable information.
+
+2 = The answer is fully supported by the retrieved context
+    and does not introduce unsupported factual claims.
+
+Return your response in exactly this format:
+
+Score: <0, 1, or 2>
+Reason: <short explanation>
+"""
+
+    evaluation = generate_answer(prompt)
+
+    return evaluation
+
+def extract_score(evaluation):
+    """
+    Extract the numerical score from an LLM evaluation.
+
+    Expected format:
+    Score: 0
+    Score: 1
+    Score: 2
+    """
+
+    for line in evaluation.splitlines():
+
+        if line.startswith("Score:"):
+            score = line.split(":", 1)[1].strip()
+
+        try:
+            return int(score)
+        except ValueError:
+            return None
+
+    return None
+
+def calculate_answer_metrics(evaluations):
+    """
+    Calculate answer evaluation metrics.
+
+    evaluations should be a list of LLM judge responses.
+    """
+    score_0 = 0
+    score_1 = 0
+    score_2 = 0
+
+    for evaluation in evaluations:
+
+        score = extract_score(evaluation)
+
+        if score == 0:
+            score_0 += 1
+
+        elif score == 1:
+            score_1 += 1
+
+        elif score == 2:
+            score_2 += 1
+
+    total = score_0 + score_1 + score_2
+
+    if total == 0:
+        accuracy = 0
+    else:
+        accuracy = score_2 / total
+
+    return {
+        "score_0": score_0,
+        "score_1": score_1,
+        "score_2": score_2,
+        "accuracy": accuracy
+    }
+
+def calculate_groundedness_metrics(evaluations):
+    """
+    Calculate groundedness evaluation metrics.
+
+    evaluations should be a list of LLM groundedness
+    judge responses.
+    """
+
+    score_0 = 0
+    score_1 = 0
+    score_2 = 0
+
+    for evaluation in evaluations:
+
+        score = extract_score(evaluation)
+
+        if score == 0:
+            score_0 += 1
+
+        elif score == 1:
+            score_1 += 1
+
+        elif score == 2:
+            score_2 += 1
+
+    total = score_0 + score_1 + score_2
+
+    if total == 0:
+        groundedness_rate = 0
+    else:
+        groundedness_rate = score_2 / total
+
+    return {
+        "score_0": score_0,
+        "score_1": score_1,
+        "score_2": score_2,
+        "groundedness_rate": groundedness_rate
+    }

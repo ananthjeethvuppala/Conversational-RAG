@@ -60,3 +60,37 @@ def calculate_precision_at_k(results, k=3):
     average_precision = total_precision / len(results)
 
     return average_precision
+
+def evaluate_answers(answer_evaluation_dataset, create_query_embeddings, retrieve_chunk, create_prompt, generate_answer, index, chunks, top_k=3, max_distance=0.9):
+    results = []
+
+    for item in answer_evaluation_dataset:
+        question = item["question"]
+        expected_answer = item["expected_answer"]
+
+        query_embedding = create_query_embeddings(question)
+
+        retrieved_chunks = retrieve_chunk(query_embedding, index, chunks, top_k=top_k, max_distance=max_distance)
+
+        context = ""
+
+        for chunk in retrieved_chunks:
+            context += f"""
+Source: {chunk["source"]}
+
+{chunk["text"]}
+
+"""
+        prompt = create_prompt(context, question, [])
+        answer = generate_answer(prompt)
+
+        results.append(
+            {
+                "question": question,
+                "expected_answer": expected_answer,
+                "generated_answer": answer
+            }
+        )
+
+    return results
+

@@ -7,7 +7,8 @@ from modules.prompts import create_prompt
 from modules.llm import generate_answer
 from modules.question_rewriter import rewrite_question
 from modules.evaluation_dataset import evaluation_dataset
-from modules.evaluation import evaluate_retrieval, calculate_hit_rate, calculate_precision_at_k
+from modules.evaluation import evaluate_retrieval, calculate_hit_rate, calculate_precision_at_k, evaluate_answers
+from modules.answer_evaluation_dataset import answer_evaluation_dataset
 
 # --------------------------------------------------
 # 1. Load PDF documents
@@ -44,6 +45,8 @@ print(f"FAISS index contains {index.ntotal} vectors.")
 # --------------------------------------------------
 # 5. Evaluation
 # --------------------------------------------------
+print("Number of evaluation questions:", len(answer_evaluation_dataset))
+
 for threshold in [0.5, 0.7, 0.9, 1.1, 1.3, 1.5]:
 
     evaluation_results = evaluate_retrieval(evaluation_dataset, create_query_embeddings, retrieve_chunk, index, chunks, top_k=3, max_distance=threshold)
@@ -64,6 +67,22 @@ for threshold in [0.5, 0.7, 0.9, 1.1, 1.3, 1.5]:
     print(f"\nThreshold = {threshold}")
     print(f"\nHit Rate@3: {hit_rate * 100:.2f}%")
     print(f"Precision@3: {precision * 100:.2f}%")
+
+answer_results = evaluate_answers(answer_evaluation_dataset, create_query_embeddings, retrieve_chunk, create_prompt, generate_answer, index, chunks, top_k=3, max_distance=0.9)
+
+print("\nAnswer Evaluation")
+print("-----------------")
+
+for result in answer_results:
+    print(f"\nQuestion: {result['question']}")
+
+    print("\nExpected Answer:")
+    print(result["expected_answer"])
+
+    print("\nGenerated Answer:")
+    print(result["generated_answer"])
+
+    print("\n" + "=" * 60)
 
 # --------------------------------------------------
 # 6. Get query from user
